@@ -1,0 +1,48 @@
+# There are several strategies to increment models depending on your datasets/applications
+
+# Useful docs
+
+https://docs.getdbt.com/docs/building-a-dbt-project/building-models/configuring-incremental-models
+
+https://discourse.getdbt.com/t/on-the-limits-of-incrementality/303
+
+# To get started incrementing a dbt model, you need to:
+# 1) Set materialization to incremental
+# 2) Set incremental strategy
+# 3) Set unique_key so that dbt knows when to replace or insert data when merging
+
+# example
+
+{{
+  config(
+    alias = 'my_incremental_table',
+    materialized = 'incremental',
+    incremental_strategy = 'delete+insert',
+    tags = 'airflow_frequecy_refresh',
+    unique_key = 'my_unique_key',
+    enabled = true
+  )  
+}}    
+
+# Depending on the data, you can try reloading data since the data was last loaded using the following where {{this}} refers to the model
+
+{% if is_incremental() %}
+  and datetime_added > (select max(datetime_added) from {{this}}) 
+{% endif %}
+
+# you can also reload some of the existing data to ensure consistency and accuracy
+# this loads the previous 2 complete days worth of data from today
+
+{% if is_incremental() %}
+  and datetime_added >= (select dateadd(day,-2,max(datetime_added)::date) from {{this}}) 
+{% endif %}
+
+# you can also load data that has changed in the last 2 days from the current datetim
+
+{% if is_incremental() %}
+  and datetime_added >= (select dateadd(day,-2,max(current_timestamp)::date) from {{this}}) 
+{% endif %}
+
+
+
+
