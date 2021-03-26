@@ -1,4 +1,4 @@
-# There are several strategies to increment models depending on your datasets/applications
+# There are several strategies to managing incremental dbt models depending on your datasets/applications
 
 # Useful docs
 
@@ -8,10 +8,10 @@ https://discourse.getdbt.com/t/on-the-limits-of-incrementality/303
 
 # To get started incrementing a dbt model, you need to:
 # 1) Set materialization to incremental
-# 2) Set incremental strategy
-# 3) Set unique_key so that dbt knows when to replace or insert data when merging
+# 2) Set incremental strategy (optional)
+# 3) Set unique_key so that dbt knows when to replace or insert data when merging the 2 datasets
 
-# example
+# Example
 
 {{
   config(
@@ -24,25 +24,36 @@ https://discourse.getdbt.com/t/on-the-limits-of-incrementality/303
   )  
 }}    
 
+# Refresh Option 1
 # Depending on the data, you can try reloading data since the data was last loaded using the following where {{this}} refers to the model
 
 {% if is_incremental() %}
   and datetime_added > (select max(datetime_added) from {{this}}) 
 {% endif %}
 
-# you can also reload some of the existing data to ensure consistency and accuracy
-# this loads the previous 2 complete days worth of data from today
+# Refresh Option 2
+# You can also reload some of the existing data to ensure consistency and accuracy
+# this query below loads the previous 2 complete days worth of data and today's data
 
 {% if is_incremental() %}
   and datetime_added >= (select dateadd(day,-2,max(datetime_added)::date) from {{this}}) 
 {% endif %}
 
-# you can also load data that has changed in the last 2 days from the current datetim
+# Refresh Option 3
+# you can also load data that has changed in the last 2 days from the current datetime
 
 {% if is_incremental() %}
   and datetime_added >= (select dateadd(day,-2,max(current_timestamp)::date) from {{this}}) 
 {% endif %}
 
+# Unique Key
 
+# Unique keys tell dbt whether to replace an existing row of the dataset or insert a new row
+# this is usually done with  unique IDs or hash/surrogate key functions
 
+select 
+  hash (column1,column2,column3) as my_unique_key
+  ,
+
+# It also helps to have an additional column to show when the data was added to the dataset to handle late arriving events and then using this column to increment the dataset
 
