@@ -1,5 +1,10 @@
 # There are several strategies to managing incremental dbt models depending on your datasets/applications
 
+# Incremental logic within "{% if is_incremental() %}" and "{% endif %}" are added when dbt models are run without --full-refresh.
+# A temp table is created with the incremental filter and then dbt uses the unique key from the temp table to delete data in the existing table
+# that matches the unique key in the temp table. Then the data is inserted from the temp table to the table as a way of merging
+# the 2 incremented and static datasets.
+
 # Useful docs
 
 https://docs.getdbt.com/docs/building-a-dbt-project/building-models/configuring-incremental-models
@@ -52,8 +57,9 @@ https://discourse.getdbt.com/t/on-the-limits-of-incrementality/303
 # this is usually done with  unique IDs or hash/surrogate key functions
 
 select 
-  hash (column1,column2,column3) as my_unique_key
+  surrogate_key (column1,column2,column3) as my_unique_key
   ,
 
-# It also helps to have an additional column to show when the data was added to the dataset to handle late arriving events and then using this column to increment the dataset
+# It also helps to have an additional column to show when the data was added to the dataset to handle late arriving events
+# and then using this column to increment the dataset
 
