@@ -1,9 +1,11 @@
-# There are several strategies to managing incremental dbt models depending on your datasets/applications
+# Intro:
+# There are several strategies to managing incremental dbt models depending on your datasets/applications.
+# This depends on whether you have to handle late arriving events or if you are using an aggregated dataset.
 
-# Incremental logic within "{% if is_incremental() %}" and "{% endif %}" are added when dbt models are run without --full-refresh.
-# A temp table is created with the incremental filter and then dbt uses the unique key from the temp table to delete data in the existing table
-# that matches the unique key in the temp table. Then the data is inserted from the temp table to the table as a way of merging
-# the 2 incremented and static datasets.
+# How it works:
+# Incremental logic within "{% if is_incremental() %}" and "{% endif %}" is executed when dbt models are run without --full-refresh.
+# A temp table of data is created with the incremental filter. dbt uses the unique key from the temp table to delete data in the existing table
+# that matches the unique key in the temp table. The temp table data is inserted to the table as a way of merging the datasets.
 
 # Useful docs
 
@@ -12,9 +14,10 @@ https://docs.getdbt.com/docs/building-a-dbt-project/building-models/configuring-
 https://discourse.getdbt.com/t/on-the-limits-of-incrementality/303
 
 # To get started incrementing a dbt model, you need to:
-# 1) Set materialization to incremental
-# 2) Set incremental strategy (optional)
-# 3) Set unique_key so that dbt knows when to replace or insert data when merging the 2 datasets
+# 1) Set materialization from table to incremental.
+# 2) Set incremental strategy (optional).
+# 3) Set unique_key so that dbt knows when to replace or insert data when merging the 2 datasets.
+# 4) Add incremental logic based on how the data needs to be refreshed.
 
 # Example
 
@@ -23,43 +26,38 @@ https://discourse.getdbt.com/t/on-the-limits-of-incrementality/303
     alias = 'my_incremental_table',
     materialized = 'incremental',
     incremental_strategy = 'delete+insert',
-    tags = 'airflow_frequecy_refresh',
     unique_key = 'my_unique_key',
     enabled = true
   )  
 }}    
 
+# Unique Key
+
+# Unique keys tell dbt how to update an existing row or insert a new row to the table.
+# This can be done with unique IDs or hash/surrogate key functions or date field if you want to reload a day's worth of data.
+
+select surrogate_key (column1,column2,column3) as my_unique_key, ...
+
 # Refresh Option 1
-# Depending on the data, you can try reloading data since the data was last loaded using the following where {{this}} refers to the model
+# Depending on the data, you can try loading new data since the data was last loaded using the following where {{this}} refers to the model/table
+# and datetime_added is the time an event is created/recorded in source data.
 
 {% if is_incremental() %}
   and datetime_added > (select max(datetime_added) from {{this}}) 
 {% endif %}
 
 # Refresh Option 2
-# You can also reload some of the existing data to ensure consistency and accuracy
-# this query below loads the previous 2 complete days worth of data and today's data
+# You can also reload some of the existing data to ensure consistency and accuracy if you have late arriving events.
+# This query below loads the previous 2 complete days worth of data and today's data.
 
 {% if is_incremental() %}
   and datetime_added >= (select dateadd(day,-2,max(datetime_added)::date) from {{this}}) 
 {% endif %}
 
 # Refresh Option 3
-# you can also load data that has changed in the last 2 days from the current datetime
+# There is also an option to select simply reload several days of data based on an date.
+# The below would reload today's data and the previous 2 complete days of data. 
 
 {% if is_incremental() %}
-  and datetime_added >= (select dateadd(day,-2,max(current_timestamp)::date) from {{this}}) 
+  and date > (select dateadd(day,-2,(current_date)::date) from {{this}}) 
 {% endif %}
-
-# Unique Key
-
-# Unique keys tell dbt whether to replace an existing row of the dataset or insert a new row
-# this is usually done with  unique IDs or hash/surrogate key functions
-
-select 
-  surrogate_key (column1,column2,column3) as my_unique_key
-  ,
-
-# It also helps to have an additional column to show when the data was added to the dataset to handle late arriving events
-# and then using this column to increment the dataset
-
