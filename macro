@@ -1,0 +1,51 @@
+# Intro:
+# Macros are a way to encapsulate logic in one place that can then be reused and recycled to ensure a single source of truth across all datasets in a project.
+
+# Useful docs
+
+https://docs.getdbt.com/docs/building-a-dbt-project/jinja-macros
+
+# Example 1: Simple use case for counting event ids where flag 1 is set to true
+
+model code
+
+, count(distinct case when {{flag_1_true()}} then event_id else null end) as unique_events_with_flag_1_true
+
+macro code
+
+{% macro unique_events() %}
+
+  flag_1 = true
+
+{% endmacro %}
+
+Example 2: More complex example with variable input that allows different logic applied within the same macro depending on input variable
+
+model code
+
+, {{car_classification('brand','column')}}
+, {{car_classification('colour','column')}}
+
+macro code
+
+{% macro car_classification() %}
+
+{%- if type == 'brand' -%}
+
+case
+   when {{column}} in ('Ferrari','Lamborghini')
+   then 'Super Car'
+  else 'Regular car'
+end  
+ 
+{%- elif type == 'colour' -%}
+
+case
+   when {{column}} in ('Ferrari','Lamborghini')
+   then 'Super Car'
+  else 'Regular car'
+end  
+
+{% endif %}
+
+{% endmacro %}
