@@ -3,4 +3,5 @@ This is a repo of useful dbt knowledge.
 
 Including:
 
-- Incremental data modelling to handle large datasets
+- incremental_modelling: Incremental data modelling to handle large datasets
+- variable: Using variables to refresh data
