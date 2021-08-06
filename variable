@@ -1,0 +1,21 @@
+# Intro:
+# Variables in dbt are useful for handling targeted refreshes on a much larger dataset.
+# A default value is set for scheduled refreshes and you have the option is parsing a different value on a specific run.
+
+# Useful docs
+
+https://docs.getdbt.com/docs/building-a-dbt-project/building-models/using-variables
+
+# Example
+# We have a dataset that is refreshed for the past 7 days using an incremental table materialization by default. 
+# We would like to run a custom refresh for a smaller date range than the default but only once.
+
+Sample code in model
+
+select ...
+from my_table_name
+where some_date between dateadd(day,'{{var("previous_days","-7")}}', current_date) and current date
+
+# Run time code to refresh model
+
+dbt run --models my_model_name --var "{'previous_days':'-3'}"
