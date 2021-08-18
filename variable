@@ -18,4 +18,4 @@ where some_date between dateadd(day,'{{var("previous_days","-7")}}', current_dat
 
 # Run time code to refresh model
 
-dbt run --models my_model_name --var "{'previous_days':'-3'}"
+dbt run --models my_model_name --vars "{'previous_days':'-3'}"
