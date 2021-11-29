@@ -1,5 +1,5 @@
 # Intro:
-# Incremnetal Modelling is a useful strategy to managing large immutable datasets while saving time and credits keeping data up to date. 
+# Incremental Modelling is a useful strategy to managing large immutable datasets while saving time and credits keeping data up to date. 
 
 # There are several strategies to managing incremental dbt models depending on your datasets/applications.
 # This depends on whether you have to handle late arriving events or if you are using an aggregated dataset.
