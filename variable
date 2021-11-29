@@ -14,7 +14,7 @@ Sample code in model
 
 select ...
 from my_table_name
-where some_date between dateadd(day,'{{var("previous_days","-7")}}', current_date) and current date
+where some_date between dateadd(day,'{{var("previous_days","-7")}}', current_date) and current_date
 
 # Run time code to refresh model
 
